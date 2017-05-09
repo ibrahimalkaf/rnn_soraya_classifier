@@ -136,7 +136,6 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
             word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
           else:
             word = w
-          word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
           if word in vocab:
             vocab[word] += 1
           else:
