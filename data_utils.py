@@ -64,7 +64,7 @@ _PUNCTUATIONS_COMBO_TRIM_REGEX = re.compile(r"((\.\s){2,}|(\,\s){2,}|(\:\s){2,}|
 
 _SMILEY_REGEX = re.compile(r"([:|;]\s[)|(|d|p])$")
 
-def basic_tokenizer(sentence):
+def basic_tokenizer_1(sentence):
   """Very basic tokenizer: split the sentence into a list of tokens."""
   words = []
 
@@ -91,7 +91,7 @@ def basic_tokenizer(sentence):
       words.extend(re.split(_WORD_SPLIT, space_separated_fragment))
   return [w for w in words if w]
   
-def basic_tokenizer_1(sentence):
+def basic_tokenizer(sentence):
   """Very basic tokenizer: split the sentence into a list of tokens."""
   words = []
   for space_separated_fragment in sentence.strip().split():
