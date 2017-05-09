@@ -43,7 +43,7 @@ tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
 tf.app.flags.DEFINE_integer("steps_per_checkpoint", 300,
                             "How many training steps to do per checkpoint.")
-tf.app.flags.DEFINE_integer("max_training_steps", 10000,
+tf.app.flags.DEFINE_integer("max_training_steps", 500000,
                             "Max training steps.")
 tf.app.flags.DEFINE_integer("max_test_data_size", 0,
                             "Max size of test set.")
@@ -259,7 +259,6 @@ def train():
       if task['joint'] == 1:
         _, step_loss, tagging_logits, classification_logits = model.joint_step(sess, encoder_inputs, tags, tag_weights, labels,
                                    batch_sequence_length, bucket_id, False)
-        print(classification_logits)
       elif task['tagging'] == 1:
         _, step_loss, tagging_logits = model.tagging_step(sess, encoder_inputs, tags, tag_weights,
                                    batch_sequence_length, bucket_id, False)
@@ -270,6 +269,7 @@ def train():
       step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
       loss += step_loss / FLAGS.steps_per_checkpoint
       current_step += 1
+      #print("loss: %r." % loss)
 
       # Once in a while, we save checkpoint, print statistics, and run evals.
       if current_step % FLAGS.steps_per_checkpoint == 0:
@@ -311,6 +311,7 @@ def train():
                   _, step_loss, classification_logits = model_test.classification_step(sess, encoder_inputs, labels,
                                              sequence_length, bucket_id, True) 
                 eval_loss += step_loss / len(data_set[bucket_id])
+                
                 hyp_label = None
                 if task['intent'] == 1:
                   ref_label_list.append(rev_label_vocab[labels[0][0]])
@@ -323,6 +324,7 @@ def train():
                   ref_tag_list.append([rev_tag_vocab[x[0]] for x in tags[:sequence_length[0]]])
                   hyp_tag_list.append([rev_tag_vocab[np.argmax(x)] for x in tagging_logits[:sequence_length[0]]])
 
+            print("eval_loss: %r." % eval_loss)
             accuracy = float(correct_count)*100/count
             if task['intent'] == 1:
               print("  %s accuracy: %.2f %d/%d" % (mode, accuracy, correct_count, count))
@@ -349,7 +351,8 @@ def train():
           best_test_score = test_tagging_result['f1']
           # save the best output file
           subprocess.call(['mv', current_taging_test_out_file, current_taging_test_out_file + '.best_f1_%.2f' % best_test_score])
-          
+      print("loss: %r." % loss)
+
 def main(_):
     train()
 
