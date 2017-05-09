@@ -25,10 +25,6 @@ START_VOCAB_dict = dict()
 START_VOCAB_dict['with_padding'] = [_PAD, _UNK]
 START_VOCAB_dict['no_padding'] = [_UNK]
 
-# Custom Tokenizers
-_ORDER_ID_TOKEN = "[order_id]"
-_ORDER_URL_TOKEN = "[order_url]"
-_TOD_TOKEN = "[tod]"
 
 PAD_ID = 0
 
@@ -40,56 +36,7 @@ UNK_ID_dict['no_padding'] = 0
 _WORD_SPLIT = re.compile("([.,!?\"':;)(])")
 _DIGIT_RE = re.compile(r"\d")
 
-# Regular expressions used to tokenize.
-_WORD_SPLIT = re.compile("([.,!?\"':;)(])")
-_PUNCTUATIONS = re.compile("([.,!?\"'])")
-_DIGIT_RE = re.compile(r"\d")
-_NOT_ALPHANUMERIC_RE = re.compile(r"[^a-zA-Z0-9]+")
-
-# Modification from this References: http://daringfireball.net/2010/07/improved_regex_for_matching_urls
-_URLS_REGEX = re.compile(r"(?i)\b((?:[a-z][\w-]+://(?:[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'.,<>?]))")
-
-_ORDER_ID_REGEX = re.compile(r"((\+62|0)8[0-9]{13,})")
-_ORDER_URL_REGEX = re.compile(r"(((http|https)://)?(www\.)?salestockindonesia\.com/order/history/((\+62|0)8[0-9]{13,}))")
-_ORDER_URL_SPECIFIC = "https://www.salestockindonesia.com/order/history/[order_id]"
-_ORDER_URL_GENERIC = "https://www.salestockindonesia.com/order/history"
-
-_TOD_REGEX = re.compile(r"([Ss]elamat (pagi|Pagi|siang|Siang|sore|Sore|malam|Malam))")
-_PUNCTUATIONS_TRIM_REGEX = re.compile(r"((\.){2,}|(\,){2,}|(\:){2,}|(\;){2,}|(\(){2,}|(\)){2,}|(\<){2,}|(\>){2,}|(\{){2,}|(\}){2,}|(\[){2,}|(\]){2,}|(\?){2,}|(\!){2,})")
-_PUNCTUATIONS_COMBO_TRIM_REGEX = re.compile(r"((\.\s){2,}|(\,\s){2,}|(\:\s){2,}|(\;\s){2,}|(\?\s){2,}|(\!\s){2,}|"
-                                            r"(\(\s){2,}|(\)\s){2,}|(\<\s){2,}|(\>\s){2,}|(\{\s){2,}|(\}\s){2,}|"
-                                            r"(\?\!){2,})")
-
-_SMILEY_REGEX = re.compile(r"([:|;]\s[)|(|d|p])$")
-
 def basic_tokenizer(sentence):
-  """Very basic tokenizer: split the sentence into a list of tokens."""
-  words = []
-
-  # sentence = sentence.lower()
-  sentence = _ORDER_URL_REGEX.sub(_ORDER_URL_TOKEN, sentence)
-  sentence = _ORDER_ID_REGEX.sub(_ORDER_ID_TOKEN, sentence)
-  sentence = _TOD_REGEX.sub(_TOD_TOKEN, sentence)
-
-  while _PUNCTUATIONS_TRIM_REGEX.search(sentence):
-    punctuation_index = _PUNCTUATIONS_TRIM_REGEX.search(sentence).start()
-    punctuation_char = sentence[punctuation_index:(punctuation_index+1)]
-    sentence = _PUNCTUATIONS_TRIM_REGEX.sub(punctuation_char, sentence, 1)
-
-  while _PUNCTUATIONS_COMBO_TRIM_REGEX.search(sentence):
-    punctuation_index = _PUNCTUATIONS_COMBO_TRIM_REGEX.search(sentence).start()
-    punctuation_char = sentence[punctuation_index:(punctuation_index + 2)]
-    sentence = _PUNCTUATIONS_COMBO_TRIM_REGEX.sub(punctuation_char, sentence, 1)
-
-  for space_separated_fragment in sentence.strip().split():
-    if _URLS_REGEX.match(space_separated_fragment):
-      words.append(space_separated_fragment)
-    else:
-      space_separated_fragment = space_separated_fragment.lower()
-      words.extend(re.split(_WORD_SPLIT, space_separated_fragment))
-  return [w for w in words if w]
-  
-def basic_tokenizer_1(sentence):
   """Very basic tokenizer: split the sentence into a list of tokens."""
   words = []
   for space_separated_fragment in sentence.strip().split():
@@ -130,11 +77,7 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
           print("  processing line %d" % counter)
         tokens = tokenizer(line) if tokenizer else basic_tokenizer(line)
         for w in tokens:
-          if not _URLS_REGEX.match(w):
-            word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
-          else:
-            word = w
-            
+          word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
           if word in vocab:
             vocab[word] += 1
           else:
@@ -201,18 +144,8 @@ def sentence_to_token_ids(sentence, vocabulary, UNK_ID,
     words = basic_tokenizer(sentence)
   if not normalize_digits:
     return [vocabulary.get(w, UNK_ID) for w in words]
-
   # Normalize digits by 0 before looking words up in the vocabulary.
-  tokens = []
-  for w in words:
-    if not _URLS_REGEX.match(w):
-      word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
-    else:
-      word = w
-
-    tokens.append(vocabulary.get(word, UNK_ID))
-
-  return tokens
+  return [vocabulary.get(re.sub(_DIGIT_RE, "0", w), UNK_ID) for w in words]
 
 
 def data_to_token_ids(data_path, target_path, vocabulary_path,
